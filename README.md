@@ -7,7 +7,7 @@ MetaSimil is a metadata similarity analysis framework written in pure Python.
 - First release: 2016-08-28
 - Licence: [GNU GLPv3](http://www.gnu.org/copyleft/gpl.html)
 
-## Features
+# Features
 
 - Duplicates detection or similar records suggestion,
 - Single or multiple collections analysis, 
@@ -17,11 +17,11 @@ MetaSimil is a metadata similarity analysis framework written in pure Python.
 - Can handles hundred of thousands of records on a laptop,
 - Multi-processing.
 
-# Tutorial an examples
+# Tutorial and examples
 
 See this [general example](./Examples/AnalysisScripts/AnalyseOneCollection.py).
 
-## Origin and credits
+# Origin and credits
 
 MetaSimil is an evolution of [MarcXimiL](http://marcximil.sourceforge.net/), written by Alain Borel and Jan Krause and which is also licensed under GPLv3. Notable changes:
 
