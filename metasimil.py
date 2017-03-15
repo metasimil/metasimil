@@ -22,13 +22,13 @@
 """
 MetaSimil is a similarity analysis software and Python library.
 
-Date: 2016-08-27
-Version: 0.1
-Warning: this is an "alpha" release. For production, http://marcximil.sourceforge.net is recomended.
+Date: 2017-03-15
+Version: 0.2
+Warning: this is a "beta" release. For production, http://marcximil.sourceforge.net is recomended.
 
 Author: Jan Krause. 
 Licence: GNU General Public License v3.0 or later at your option.
-Copyrights: Many fucntions have been adapted form MarcXimiL : http://marcximil.sourceforge.net/ (by Alain Borel and Jan Krause, under GNU GPL3.0) 
+Copyrights: Many fucntions have been adapted form MarcXimiL : http://marcximil.sourceforge.net/ (by Alain Borel and Jan Krause, also licensed under GNU GPL3.0) 
 
 Strucutre of this library:
 The library and the data is organized in collections (class Collection), composed of records (class Records), in turned composed of fields (class Field). An additional Converter class is dedicated to the conversion of metadata formats (CSV, DublinCore, MarcXML) to Python dictionanries. 
@@ -1067,7 +1067,7 @@ class Converter:
         elif self.format == 'csv':
             if version[0]=='2':
                 with codecs.open( self.filename, "r", "utf-8" ) as f:
-                    header = True                    
+                    header = self.options['header']                    
                     for line in f:
                         if not header:
                             yield self.convert(line)
@@ -1075,7 +1075,7 @@ class Converter:
                             header = False
             else:
                 with open(self.filename) as f:
-                    header = True                    
+                    header = self.options['header']                    
                     for line in f:
                         if not header:
                             yield self.convert(line)
@@ -1176,11 +1176,44 @@ class Converter:
                     if len(parsed_field) > 0:
                         if parsed_field[-1] == delim:
                             parsed_field = parsed_field[:-1]
+                if len(parsed_field) > 0:
+                    if parsed_field[-1] == '\n':
+                        parsed_field = parsed_field[:-1]
+        return parsed_field
 
-        return [parsed_field]
+    def csv_parse_multi(self, column, record, sep='\t', delim='"'):
+        """
+        Parses a filed (column) from a csv record
+        """
+        parsed_field = None
+
+        rs = record.split(sep)
+
+        if len(rs) >= column:
+            parsed_field = rs[column]
+            if len(parsed_field) == 0:
+                parsed_field = None
+            else:
+                if parsed_field[0] == delim:
+                    parsed_field = parsed_field[1:]
+                    if len(parsed_field) > 0:
+                        if parsed_field[-1] == delim:
+                            parsed_field = parsed_field[:-1]
+                if len(parsed_field) > 0:
+                    if parsed_field[-1] == '\n':
+                        parsed_field = parsed_field[:-1]
+                if self.options['fieldSeparator']: # filedSeparatore, serparates fields within a column
+                    if self.options['fieldSeparator'] in parsed_field:
+                        parsed_field = parsed_field.split(self.options['fieldSeparator'])
+                    else:
+                        parsed_field = [parsed_field]
+                else:
+                        parsed_field = [parsed_field]
+        return parsed_field
 
 
     def convert(self, text_metadata):
+
         if self.format == 'marcxml':
             if self.options == None:
                 options = [ {'Source':['245  a'], 'Python':'Title', 'Method':self.marc_parse_multi},
@@ -1191,17 +1224,21 @@ class Converter:
                 options = self.options
             for o in options:
                 self.result[o['Python']] = o['Method'](o['Source'], text_metadata)
+
         elif self.format == 'dublincore':
             self.result = self.dublincore_parser(text_metadata)
-        if self.format == 'csv':
+
+        elif self.format == 'csv':
             if self.options == None:
-                options = [ {'Source':1, 'Python':'Title', 'Method':self.csv_parse_single},
-                            {'Source':2, 'Python':'Date', 'Method':self.csv_parse_single},
-                            {'Source':3, 'Python':'Creator', 'Method':self.csv_parse_single},
-                            {'Source':0, 'Python':'Identifier', 'Method':self.csv_parse_single} ]
+                options = { 'fields': [ {'Source':1, 'Python':'Title', 'Method':self.csv_parse_multi},
+                                        {'Source':2, 'Python':'Date', 'Method':self.csv_parse_multi},
+                                        {'Source':3, 'Python':'Creator', 'Method':self.csv_parse_multi},
+                                        {'Source':0, 'Python':'Identifier', 'Method':self.csv_parse_single} ],\
+                            'header': True,
+                            'fieldSeparator': ';' }
             else:
                 options = self.options
-            for o in options:
+            for o in options['fields']:
                 self.result[o['Python']] = o['Method'](o['Source'], text_metadata)
         else:
             pass
